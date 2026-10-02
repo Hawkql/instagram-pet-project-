@@ -1,14 +1,13 @@
 package com.example.User_Service.web.dto;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
 
-import java.time.LocalDate;
+import java.util.UUID;
 
-public record CreateUserDto(
+public record RequestUserDto(
+
+        UUID id,
         @NotNull
         String name,
         @NotNull

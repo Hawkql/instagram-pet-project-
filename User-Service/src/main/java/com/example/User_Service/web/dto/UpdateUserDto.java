@@ -8,10 +8,5 @@ public record UpdateUserDto(@NotNull
                             @NotNull
                             String family,
                             @NotNull
-                            String userName,
-                            @NotNull
-                            @Email
-                            String email,
-                            @NotNull
                             String bio) {
 }

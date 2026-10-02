@@ -1,11 +1,15 @@
 package com.example.User_Service.domain;
 
+import com.example.User_Service.web.dto.ResponseUserDto;
+import com.example.User_Service.web.dto.UpdateUserDto;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -14,8 +18,6 @@ import java.util.UUID;
 @Table(name = "users")
 public class UserEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Setter
@@ -40,19 +42,38 @@ public class UserEntity {
     @Setter
     @Column(name = "avatar_url")
     private String avatarUrl;
-    @Column(name = "created",nullable = false)
-    private LocalDate createdAt;
+    @Column(name = "created_at",nullable = false)
+    @CreationTimestamp
+    private Instant createdAt;
 
 
-    public UserEntity(String name, String family, String userName, String email, String bio, LocalDate createdAt) {
+    public UserEntity(UUID id,String name, String family, String userName, String email, String bio) {
+        this.id = id ;
         this.name = name;
         this.family = family;
         this.userName = userName;
         this.email = email;
         this.bio = bio;
-        this.createdAt = createdAt;
     }
 
     public UserEntity() {
+    }
+
+    public  void update(UpdateUserDto dto){
+        this.name=dto.name();
+        this.family= dto.family();
+        this.bio= dto.bio();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserEntity other)) return false;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
