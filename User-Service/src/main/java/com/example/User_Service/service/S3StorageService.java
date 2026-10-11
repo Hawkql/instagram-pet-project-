@@ -2,7 +2,7 @@ package com.example.User_Service.service;
 
 import com.example.User_Service.config.S3Properties;
 import com.example.User_Service.domain.PermittedExtensions;
-import jdk.jfr.ContentType;
+import com.example.User_Service.web.exception.UnsupportedFileExtensionException;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -28,8 +28,13 @@ public class S3StorageService {
 
     public String generateKey(UUID userId, String ext){
         if(isNotPermitted(ext))
-            throw  new RuntimeException();
+            throw  new UnsupportedFileExtensionException("Недопустимое расширение: " + ext);
         return  "avatars/"+userId.toString()+"/"+UUID.randomUUID()+"."+ext;
+    }
+
+    public String publicUrl(String key){
+        if(key ==null) return null;
+        return  s3Properties.publicUrl()+"/"+s3Properties.bucket()+"/"+key;
     }
     public String putUrl(String key, String contentType){
         var presignedRequest= s3Presigner.presignPutObject(PutObjectPresignRequest.builder()
@@ -59,6 +64,7 @@ public class S3StorageService {
             return false;
         }
     }
+
 
     private boolean isNotPermitted(String example){
         for(var ext:PermittedExtensions.values()){

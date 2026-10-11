@@ -1,16 +1,12 @@
 package com.example.User_Service.domain;
 
-import com.example.User_Service.web.dto.ResponseUserDto;
-import com.example.User_Service.web.dto.UpdateUserDto;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.example.User_Service.web.dto.request.UpdateUserDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter

@@ -1,16 +1,22 @@
 package com.example.User_Service.web;
 
-import com.example.User_Service.domain.UserEntity;
 import com.example.User_Service.service.AvatarService;
+import com.example.User_Service.service.FollowService;
 import com.example.User_Service.service.UserService;
-import com.example.User_Service.web.dto.*;
 import com.example.User_Service.web.dto.avatar.AvatarConfirmRequest;
 import com.example.User_Service.web.dto.avatar.AvatarUploadUrlRequest;
 import com.example.User_Service.web.dto.avatar.AvatarUploadUrlResponse;
+import com.example.User_Service.web.dto.request.RequestUserDto;
+import com.example.User_Service.web.dto.request.UpdateUserDto;
+import com.example.User_Service.web.dto.request.UserSearchFilter;
+import com.example.User_Service.web.dto.response.FollowerDtoResponse;
+import com.example.User_Service.web.dto.response.ResponseUserDto;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,15 +33,19 @@ public class UserController {
     private final UserService userService;
     private  final Logger logger = LoggerFactory.getLogger(UserController.class);
     private  final AvatarService avatarService;
-    public UserController(UserService userService,AvatarService avatarService) {
+    private  final FollowService followService;
+    public UserController(UserService userService,
+                          AvatarService avatarService,
+                          FollowService followService) {
         this.avatarService =avatarService;
         this.userService = userService;
+        this.followService=followService;
     }
 
     @PostMapping()
     public ResponseEntity<ResponseUserDto> create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody RequestUserDto requestUserDto){
         UUID id =UUID.fromString(jwt.getSubject());
-
+        logger.info("Start method create for user ="+id);
         var create = userService.create(id,requestUserDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(create);
     }
@@ -53,21 +63,25 @@ public class UserController {
         return  ResponseEntity.ok(userService.getMe(id));
     }
     @GetMapping("/{id}")
-    public  ResponseEntity<ResponseUserDto> getById(@PathVariable UUID id){
-        return  ResponseEntity.ok(userService.getById(id));
+    public  ResponseEntity<?> getById(@AuthenticationPrincipal Jwt jwt ,@PathVariable UUID id){
+        UUID idJwt =UUID.fromString(jwt.getSubject());
+        if(idJwt.equals(id))
+            return  ResponseEntity.ok(userService.getMe(idJwt));
+        else
+            return  ResponseEntity.ok(userService.getById(id));
     }
     @GetMapping("/search")
     public  ResponseEntity<List<ResponseUserDto>> getAllUsers(
             @RequestParam(name = "name",required = false) String name,
             @RequestParam(name = "family",required = false) String family,
             @RequestParam(name = "userName",required = false) String userName,
-            @PageableDefault(page = 10,size = 5)Pageable pageable){
+            @ParameterObject @PageableDefault(page = 10,size = 5)Pageable pageable){
         UserSearchFilter filter =  new UserSearchFilter(name,family,userName);
         List<ResponseUserDto> list =  userService.searchByFilter(filter,pageable);
         return ResponseEntity.ok().body(list);
     }
     @GetMapping("/by-username/{username}")
-    public  ResponseEntity<ResponseUserDto> getUserByUserName(@PathVariable String userName ){
+    public  ResponseEntity<ResponseUserDto> getUserByUserName(@PathVariable("username") String userName ){
         ResponseUserDto entity= userService.getUserById(userName);
         return ResponseEntity.ok(entity);
     }
@@ -84,18 +98,44 @@ public class UserController {
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody AvatarConfirmRequest avatarConfirmRequest){
         UUID id = UUID.fromString(jwt.getSubject());
-        return  ResponseEntity.ok(avatarService.confirmaAvatarUrl(id,avatarConfirmRequest.key()));
+        return  ResponseEntity.ok(avatarService.confirmAvatar(id,avatarConfirmRequest.key()));
     }
     @DeleteMapping("/avatar")
-    public  ResponseEntity<Void> deledAvatar(@AuthenticationPrincipal Jwt jwt){
+    public  ResponseEntity<Void> deleteAvatar(@AuthenticationPrincipal Jwt jwt){
         UUID id = UUID.fromString(jwt.getSubject());
-        avatarService.deleteAvatarUrl(id);
+        avatarService.deleteAvatar(id);
         return  ResponseEntity.noContent().build();
     }
-    //admin доступ
-    @DeleteMapping("/delete/{id}")
-    public  ResponseEntity<Void> deledUser(@AuthenticationPrincipal Jwt jwt){
+    @DeleteMapping("/delete")
+    public  ResponseEntity<Void> deleteUser(@AuthenticationPrincipal Jwt jwt){
+        UUID id = UUID.fromString(jwt.getSubject());
+        userService.deleteUser(id);
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/{id}/follow")
+    public ResponseEntity<Void> followingByUser(@AuthenticationPrincipal Jwt jwt,
+                                             @PathVariable UUID id){
+        UUID userId = UUID.fromString(jwt.getSubject());
+        followService.following(userId,id);
+        return  ResponseEntity.ok().build();
+    }
+    @DeleteMapping("/{id}/follow")
+    public  ResponseEntity<Void> unFollowed(@AuthenticationPrincipal Jwt jwt,
+                                            @PathVariable UUID id){
+        UUID userId = UUID.fromString(jwt.getSubject());
+        followService.unFollowing(userId,id);
+        return ResponseEntity.ok().build();
+    }
+    @GetMapping("/{id}/followers")
+    public ResponseEntity<Slice<FollowerDtoResponse>> getFollowers(@PathVariable UUID id,
+                                                            @ParameterObject @PageableDefault(page = 10,size = 5) Pageable pageable){
 
-        return  null;
+        return ResponseEntity.ok().body(followService.getFollowers(id,pageable));
+
+    }
+    @GetMapping("/{id}/following")
+    public  ResponseEntity<Slice<FollowerDtoResponse>> getFollowing(@PathVariable UUID id,
+                                              @ParameterObject @PageableDefault(page = 10,size = 5) Pageable pageable){
+        return ResponseEntity.ok().body(followService.getFollowing(id,pageable));
     }
 }

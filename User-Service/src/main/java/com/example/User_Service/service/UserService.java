@@ -3,31 +3,30 @@ package com.example.User_Service.service;
 import com.example.User_Service.domain.UserEntity;
 import com.example.User_Service.mapper.UserEntityMapUser;
 import com.example.User_Service.repository.UserRepository;
-import com.example.User_Service.web.dto.UpdateUserDto;
-import com.example.User_Service.web.dto.UserSearchFilter;
+import com.example.User_Service.web.dto.request.UpdateUserDto;
+import com.example.User_Service.web.dto.request.UserSearchFilter;
+import com.example.User_Service.web.dto.response.ResponseOtherUserDto;
 import com.example.User_Service.web.exception.UserAllReadyException;
-import com.example.User_Service.web.dto.RequestUserDto;
-import com.example.User_Service.web.dto.ResponseUserDto;
+import com.example.User_Service.web.dto.request.RequestUserDto;
+import com.example.User_Service.web.dto.response.ResponseUserDto;
 import com.example.User_Service.web.exception.UserNotFoundException;
-import jakarta.persistence.Entity;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
-import org.apache.catalina.mapper.Mapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
-import static com.example.User_Service.mapper.UserEntityMapUser.mapToResponse;
-import static com.example.User_Service.mapper.UserEntityMapUser.mapToUserEntity;
+import static com.example.User_Service.mapper.UserEntityMapUser.*;
 
 @Service
 public class UserService {
     private  final UserRepository userRepository;
-
+    private  final Logger logger = LoggerFactory.getLogger(UserService.class);
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -44,13 +43,14 @@ public class UserService {
         UserEntity user = mapToUserEntity(id,createUserDto);
 
         userRepository.save(user);
+        logger.info("User save to database id"+id);
         return  mapToResponse(user);
     }
 
-    public ResponseUserDto getById(UUID id) {
+    public ResponseOtherUserDto getById(UUID id) {
         UserEntity entity = userRepository.findById(id)
                 .orElseThrow(()->new UserNotFoundException("Not found user by id ="+id));
-        return mapToResponse(entity);
+        return mapToResponseOtherDto(entity);
     }
 
     public ResponseUserDto getMe(UUID id) {
@@ -76,5 +76,12 @@ public class UserService {
         return userRepository.searchAllByFilter(filter.name(),filter.family(),filter.userName(),pageable)
                 .stream().map(UserEntityMapUser::mapToResponse).toList();
 
+    }
+
+    @Transactional
+    public void deleteUser(UUID id) {
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(()->new UserNotFoundException("Not found user by id ="+id));
+        userRepository.delete(user);
     }
 }

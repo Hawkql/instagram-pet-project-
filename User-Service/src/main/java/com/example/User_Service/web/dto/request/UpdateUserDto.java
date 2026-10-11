@@ -1,6 +1,5 @@
-package com.example.User_Service.web.dto;
+package com.example.User_Service.web.dto.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 
 public record UpdateUserDto(@NotNull

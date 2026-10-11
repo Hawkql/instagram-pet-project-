@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
@@ -15,6 +16,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     boolean existsByUserName(String userName);
 
     UserEntity findByUserName(String userName);
+    @Query("select u.avatarUrl from UserEntity u where u.avatarUrl is not null")
+    Set<String> findAllAvatarKeys();
 
     @Query("""
     SELECT u.id FROM UserEntity u
