@@ -1,4 +1,6 @@
 package com.example.Post_Service.web.dto.request;
 
-public class LikedPostRequestDto {
+import java.util.UUID;
+
+public record LikedPostRequestDto(UUID idPost,UUID authorId) {
 }

@@ -1,4 +1,12 @@
 package com.example.Post_Service.web.dto.request;
 
-public class ShortUserDto {
+import java.util.UUID;
+
+public record ShortUserDto(
+
+        // возможно лишние данные возвращаются
+        UUID id,
+        String userName,
+        String url
+) {
 }

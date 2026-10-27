@@ -1,4 +1,6 @@
 package com.example.Post_Service.web.dto.request;
 
-public record DeleteCommentRequest() {
+import java.util.UUID;
+
+public record DeleteCommentRequest(UUID postId, UUID commentsId) {
 }

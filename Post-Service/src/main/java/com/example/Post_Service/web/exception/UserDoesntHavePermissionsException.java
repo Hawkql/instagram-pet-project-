@@ -1,4 +1,7 @@
 package com.example.Post_Service.web.exception;
 
-public class UserDoesntHavePermitionException {
+public class UserDoesntHavePermissionsException extends RuntimeException{
+    public  UserDoesntHavePermissionsException(String message)  {
+        super(message);
+    }
 }

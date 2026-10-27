@@ -1,4 +1,4 @@
-package com.example.User_Service.web.exception;
+package com.example.Post_Service.web.exception;
 
 public class ObjectNotFoundException extends RuntimeException {
     public ObjectNotFoundException(String string) {

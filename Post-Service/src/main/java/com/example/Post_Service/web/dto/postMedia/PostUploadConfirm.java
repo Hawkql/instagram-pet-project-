@@ -1,4 +1,6 @@
 package com.example.Post_Service.web.dto.postMedia;
 
-public class PostUploadConfirm {
+import jakarta.validation.constraints.NotBlank;
+
+public record PostUploadConfirm(@NotBlank String key) {
 }
