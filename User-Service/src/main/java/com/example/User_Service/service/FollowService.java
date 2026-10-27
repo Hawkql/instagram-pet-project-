@@ -1,6 +1,7 @@
 package com.example.User_Service.service;
 
 import com.example.User_Service.domain.FollowEntity;
+import com.example.User_Service.mapper.mapperFollowEntityToFollowResponse;
 import com.example.User_Service.repository.FollowRepository;
 import com.example.User_Service.repository.UserRepository;
 import com.example.User_Service.web.dto.response.FollowerDto;
@@ -62,18 +63,14 @@ public class FollowService {
         userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException("Not found userId by id ="+userId));
     }
+
     private FollowerDtoResponse mapToFollowDtoResponse(FollowerDto dto){
-        return  new FollowerDtoResponse(
-                dto.id(),
-                dto.userName(),
+        return mapperFollowEntityToFollowResponse.mapToFollowDtoResponse(
+                dto,
                 storageService.publicUrl(dto.avatarKey()));
     }
-    private FollowEntity mapToFollowEntity(UUID userId,UUID id){
-        return  new FollowEntity(
-                userId,
-                id
 
-        );
+    private FollowEntity mapToFollowEntity(UUID userId, UUID id){
+        return mapperFollowEntityToFollowResponse.mapToFollowEntity(userId, id);
     }
-
 }

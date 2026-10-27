@@ -10,6 +10,7 @@ import com.example.User_Service.web.dto.request.RequestUserDto;
 import com.example.User_Service.web.dto.request.UpdateUserDto;
 import com.example.User_Service.web.dto.request.UserSearchFilter;
 import com.example.User_Service.web.dto.response.FollowerDtoResponse;
+import com.example.User_Service.web.dto.response.ResponseOtherUserDto;
 import com.example.User_Service.web.dto.response.ResponseUserDto;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -93,6 +95,7 @@ public class UserController {
             UUID id = UUID.fromString(jwt.getSubject());
             return ResponseEntity.ok(avatarService.createAvatarUploadUrl(id,avatarUploadUrlRequest.contentType()));
     }
+
     @PutMapping("/avatar")
     public  ResponseEntity<ResponseUserDto> confirmAvatar(
             @AuthenticationPrincipal Jwt jwt,
@@ -137,5 +140,12 @@ public class UserController {
     public  ResponseEntity<Slice<FollowerDtoResponse>> getFollowing(@PathVariable UUID id,
                                               @ParameterObject @PageableDefault(page = 10,size = 5) Pageable pageable){
         return ResponseEntity.ok().body(followService.getFollowing(id,pageable));
+    }
+
+    //сообщи мне про этот метод .Я его не писал внутри ещё чтобы не забыть дописать
+    @GetMapping("/batch")
+    public List<ResponseOtherUserDto> getBatch(@RequestParam Set<UUID> ids) {
+        if (ids.size() > 100) throw new IllegalArgumentException("было запрошенно больше данных пользователей чем можно было ");
+        return userService.findAllShort(ids);
     }
 }

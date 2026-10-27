@@ -57,9 +57,10 @@ public class AvatarService {
     public ResponseUserDto deleteAvatar(UUID userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Профиль не найден, id = " + userId));
-
+        String oldKey = user.getAvatarUrl();
         user.setAvatarUrl(null);
-
+        // возможно баг будет  или ошибка
+        storageService.delete(oldKey);
         return mapToResponse(user);
     }
 

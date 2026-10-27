@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.example.User_Service.mapper.UserEntityMapUser.*;
@@ -83,5 +84,9 @@ public class UserService {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(()->new UserNotFoundException("Not found user by id ="+id));
         userRepository.delete(user);
+    }
+
+    public List<ResponseOtherUserDto> findAllShort(Set<UUID> ids) {
+        return null;
     }
 }
