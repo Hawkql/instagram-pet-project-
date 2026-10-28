@@ -50,6 +50,8 @@ public class PostEntity {
         this.caption = caption;
         this.media = media;
         this.status = PostStatus.DRAFT;
+        this.likesCount = 0;
+        this.commentsCount = 0;
     }
 
     protected PostEntity() {

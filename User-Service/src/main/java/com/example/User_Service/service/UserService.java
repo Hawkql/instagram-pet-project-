@@ -6,6 +6,7 @@ import com.example.User_Service.repository.UserRepository;
 import com.example.User_Service.web.dto.request.UpdateUserDto;
 import com.example.User_Service.web.dto.request.UserSearchFilter;
 import com.example.User_Service.web.dto.response.ResponseOtherUserDto;
+import com.example.User_Service.web.dto.response.UserResponseToComments;
 import com.example.User_Service.web.exception.UserAllReadyException;
 import com.example.User_Service.web.dto.request.RequestUserDto;
 import com.example.User_Service.web.dto.response.ResponseUserDto;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +30,10 @@ import static com.example.User_Service.mapper.UserEntityMapUser.*;
 public class UserService {
     private  final UserRepository userRepository;
     private  final Logger logger = LoggerFactory.getLogger(UserService.class);
-    public UserService(UserRepository userRepository) {
+    private  final  S3StorageService storageService;
+    public UserService(UserRepository userRepository, S3StorageService storageService) {
         this.userRepository = userRepository;
+        this.storageService = storageService;
     }
 
     @Transactional
@@ -86,7 +90,12 @@ public class UserService {
         userRepository.delete(user);
     }
 
-    public List<ResponseOtherUserDto> findAllShort(Set<UUID> ids) {
-        return null;
+    public List<UserResponseToComments> findAllShort(Set<UUID> ids) {
+        List<UserEntity> entityList = userRepository.findAllById(ids);
+        return entityList.stream().map(user->{
+                    String publicAvatarUrl=storageService.publicUrl(user.getAvatarUrl());
+                    return  mapToUserResponseToComments(user,publicAvatarUrl);
+                })
+                .toList();
     }
 }

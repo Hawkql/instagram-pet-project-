@@ -29,23 +29,21 @@ public class MediaService {
 
     public void confirmPost(UUID authorId, String key) {
         validateOwnership(authorId, key);
-
-        if (!storageService.exists(key)) {
-            throw new ObjectNotFoundException("Объект не найден в хранилище: {}" + key);
-        }
-
+        if (!storageService.exists(key))
+            throw new ObjectNotFoundException("Объект не найден в хранилище: " + key);
     }
 
 
-    public void deleteAvatar(UUID userId,String key ) {
+    public void deletePost(UUID userId,String key ) {
         validateOwnership(userId,key);
+        storageService.delete(key);
     }
 
 
     private void validateOwnership(UUID userId, String key) {
-        if (!key.startsWith("post/" + userId + "/")) {
+        if (!key.startsWith("post/" + userId + "/"))
             throw new AccessDeniedException("Ключ не принадлежит пользователю");
-        }
+
     }
 
     private static String extensionFor(String contentType) {

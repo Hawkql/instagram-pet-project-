@@ -5,8 +5,14 @@ import com.example.Post_Service.web.dto.postMedia.PostUploadUrl;
 import com.example.Post_Service.web.dto.postMedia.PostUploadUrlResponse;
 import com.example.Post_Service.web.dto.request.CommentsRequest;
 import com.example.Post_Service.web.dto.request.PostRequest;
-import com.example.Post_Service.web.dto.request.UpdateRequest;
+import com.example.Post_Service.web.dto.request.UpdatePostCaptionRequest;
+import com.example.Post_Service.web.dto.response.CommentToResponse;
+import com.example.Post_Service.web.dto.response.LikeResponse;
 import com.example.Post_Service.web.dto.response.PostResponse;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -25,61 +31,63 @@ public class PostController {
     }
 
     @PostMapping("media/upload-url")
-    public ResponseEntity<PostUploadUrlResponse> createPostUploadUrl(@AuthenticationPrincipal Jwt jwt, @RequestBody PostUploadUrl request){
+    public ResponseEntity<PostUploadUrlResponse> createPostUploadUrl(@AuthenticationPrincipal Jwt jwt,
+                                                                     @Valid @RequestBody PostUploadUrl request){
         UUID id = UUID.fromString(jwt.getSubject());
         return ResponseEntity.ok().body(postService.createPostUploadUrlPost(id,request));
     }
     @PostMapping("/create")
     public ResponseEntity<PostResponse> putPost(@AuthenticationPrincipal Jwt jwt,
-                                                @RequestBody PostRequest request){
+                                                @Valid @RequestBody PostRequest request){
         UUID id = UUID.fromString(jwt.getSubject());
         return ResponseEntity.ok().body(postService.confirmPost(id,request));
     }
     @GetMapping("{id}")
-    public ResponseEntity<> getPostById(@RequestParam UUID id ){
-        postService.getPostById(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<PostResponse> getPostById(@AuthenticationPrincipal Jwt jwt,
+                                                    @PathVariable("id") UUID postId){
+        UUID id = UUID.fromString(jwt.getSubject());
+
+        return ResponseEntity.ok().body(postService.getPostById(id,postId));
     }
     @GetMapping("/author/{id}")
-    public ResponseEntity<Void> getPostByAuthor(@RequestParam UUID authorId ){
-        postService.getPostByAuthor(authorId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Slice<PostResponse>> getPostByAuthor(@AuthenticationPrincipal Jwt jwt,
+                                                               @PathVariable UUID authorId,
+                                                 @PageableDefault(size = 5,page = 0)Pageable page){
+        UUID id = UUID.fromString(jwt.getSubject());
+        return ResponseEntity.ok(postService.getPostByAuthor(id,authorId,page));
     }
     @DeleteMapping("{id}")
     public  ResponseEntity<Void> deletePostById(@AuthenticationPrincipal Jwt jwt,
-                                                @RequestParam UUID idPost){
+                                                @PathVariable("id") UUID idPost){
         UUID id = UUID.fromString(jwt.getSubject());
         postService.deletePostById(id,idPost);
         return ResponseEntity.noContent().build();
     }
     @PatchMapping("{id}")
-    public  ResponseEntity<Void> patchCaption(@AuthenticationPrincipal Jwt jwt,
-                                              @RequestParam UUID idPost,
-                                              @RequestBody String caption ){
+    public  ResponseEntity<PostResponse> patchCaption(@AuthenticationPrincipal Jwt jwt,
+                                                      @PathVariable("id") UUID idPost,
+                                              @Valid @RequestBody UpdatePostCaptionRequest request){
         UUID id = UUID.fromString(jwt.getSubject());
-        postService.patchCaptionById(id,idPost,caption);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(postService.patchCaptionById(id,idPost,request.caption()));
     }
 
     @PostMapping("/{id}/like")
-    public ResponseEntity<Void> likedPost(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") UUID idPost){
+    public ResponseEntity<LikeResponse> likedPost(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") UUID idPost){
         UUID id = UUID.fromString(jwt.getSubject());
-        postService.likePost(id,idPost);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(postService.likePost(id,idPost));
     }
+    // добавить мягкое удаление
     @DeleteMapping("{id}/like")
-    public  ResponseEntity<Void> deleteLikeWithPost(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") UUID idPost){
+    public  ResponseEntity<LikeResponse> deleteLikeWithPost(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") UUID idPost){
         UUID id = UUID.fromString(jwt.getSubject());
-        postService.unlikePost(id,idPost);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(postService.unLikePost(id,idPost));
     }
 
     @PostMapping("{id}/comments")
-    public  ResponseEntity<Void> addCommentsWithPost(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") UUID idPost,
-    @RequestBody CommentsRequest request){
+    public  ResponseEntity<CommentToResponse> addCommentsWithPost(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") UUID idPost,
+                                                                  @Valid @RequestBody CommentsRequest request){
         UUID id = UUID.fromString(jwt.getSubject());
-        postService.addComment(id,idPost,request.comments());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(postService.addComment(id,idPost,request.comments()));
     }
 
 }

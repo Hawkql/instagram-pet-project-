@@ -12,6 +12,7 @@ import com.example.User_Service.web.dto.request.UserSearchFilter;
 import com.example.User_Service.web.dto.response.FollowerDtoResponse;
 import com.example.User_Service.web.dto.response.ResponseOtherUserDto;
 import com.example.User_Service.web.dto.response.ResponseUserDto;
+import com.example.User_Service.web.dto.response.UserResponseToComments;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,6 +110,8 @@ public class UserController {
         avatarService.deleteAvatar(id);
         return  ResponseEntity.noContent().build();
     }
+
+    //добавить мягкое удаление
     @DeleteMapping("/delete")
     public  ResponseEntity<Void> deleteUser(@AuthenticationPrincipal Jwt jwt){
         UUID id = UUID.fromString(jwt.getSubject());
@@ -144,8 +147,8 @@ public class UserController {
 
     //сообщи мне про этот метод .Я его не писал внутри ещё чтобы не забыть дописать
     @GetMapping("/batch")
-    public List<ResponseOtherUserDto> getBatch(@RequestParam Set<UUID> ids) {
-        if (ids.size() > 100) throw new IllegalArgumentException("было запрошенно больше данных пользователей чем можно было ");
+    public List<UserResponseToComments> getBatch(@RequestParam Set<UUID> ids) {
+        if (ids.size() > 100) throw new IllegalArgumentException("Было запрошенно больше данных пользователей чем можно было ");
         return userService.findAllShort(ids);
     }
 }

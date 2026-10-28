@@ -36,6 +36,7 @@ public class UserEntity {
     private  String bio;
 
     @Setter
+    @Getter
     @Column(name = "avatar_url")
     private String avatarUrl;
     @Column(name = "created_at",nullable = false)

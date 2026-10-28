@@ -27,8 +27,8 @@ public class UserClient {
 
        String token = currentToken();
         return restClient.get()
-                .uri(b->b.path("/user/bath").queryParam("ids",ids).build())
-                .header(HttpHeaders.AUTHORIZATION,"Bearer"+token)
+                .uri(b->b.path("/user/batch").queryParam("ids",ids).build())
+                .header(HttpHeaders.AUTHORIZATION,"Bearer "+token)
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }

@@ -1,4 +1,123 @@
-FROM ubuntu:latest
-LABEL authors="stefan"
+services:
 
-ENTRYPOINT ["top", "-b"]
+  user-db:
+    image: postgres:17-alpine
+    container_name: user-db
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: userapp
+      POSTGRES_PASSWORD: userapp
+    ports:
+      - "5433:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U userapp -d userdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 512m
+
+  post-db:
+    image: postgres:17-alpine
+    container_name: post-db
+    environment:
+      POSTGRES_DB: postdb
+      POSTGRES_USER: postapp
+      POSTGRES_PASSWORD: postapp
+    ports:
+      - "5434:5432"
+    volumes:
+      - post-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postapp -d postdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 512m
+
+
+  minio:
+    image: bitnamilegacy/minio:latest
+    user: root
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 512m
+
+  minio-init:
+      image: bitnamilegacy/minio:latest
+      user: root
+      depends_on:
+        minio:
+          condition: service_healthy
+      entrypoint: >
+        /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin;
+        mc mb --ignore-existing local/avatars;
+        mc anonymous set download local/avatars;
+        mc mb --ignore-existing local/post;
+        mc anonymous set download local/post;
+        exit 0;
+        "
+
+  keycloak-db:
+    image: postgres:17-alpine
+    container_name: keycloak-db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 512m
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_APPEND: "-XX:MaxRAMPercentage=70"
+    ports:
+      - "8080:8080"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    mem_limit: 1g
+
+volumes:
+  user-db-data:
+  post-db-data:
+  keycloak-db-data:
+  minio-data:
+ 

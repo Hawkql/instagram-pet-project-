@@ -15,6 +15,6 @@ public class MapperCommentEntityToCommentResponse {
         return new CommentToResponse(entity.getUser(),entity.getComment());
     }
     public  static  CommentResponseUserWithProfile mapToCommentResponseUserWithProfile(ShortUserDto userDto,CommentsEntity comments){
-        return new CommentResponseUserWithProfile(userDto, comments.getComment(), comments.getCreateAt());
+        return new CommentResponseUserWithProfile(comments.getId(), userDto, comments.getComment(), comments.getCreateAt());
     }
 }

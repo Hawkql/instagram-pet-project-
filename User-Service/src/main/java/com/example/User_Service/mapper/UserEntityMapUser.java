@@ -4,6 +4,7 @@ import com.example.User_Service.domain.UserEntity;
 import com.example.User_Service.web.dto.request.RequestUserDto;
 import com.example.User_Service.web.dto.response.ResponseOtherUserDto;
 import com.example.User_Service.web.dto.response.ResponseUserDto;
+import com.example.User_Service.web.dto.response.UserResponseToComments;
 
 import java.util.UUID;
 
@@ -38,5 +39,8 @@ public class UserEntityMapUser {
         );
     }
 
+    public  static  UserResponseToComments mapToUserResponseToComments(UserEntity entity,String publicAvatarUrl){
+        return  new UserResponseToComments(entity.getId(), entity.getUserName(), publicAvatarUrl);
+    }
 
 }
