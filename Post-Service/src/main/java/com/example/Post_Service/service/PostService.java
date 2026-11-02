@@ -22,7 +22,6 @@ import com.example.Post_Service.web.exception.*;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -88,22 +87,24 @@ public class PostService {
 
         return  post.map(entity -> mapToResponse(
                         entity,
-                        likedPost.contains(entity.getAuthorId()),
+                        likedPost.contains(entity.getId()),
                         mapUrlToPublic(entity.getMedia())))
                 ;
     }
     @Transactional
-    public void deletePostById(UUID authorId, UUID idPost) {
-        PostEntity entity =  postRepository.findById(idPost)
-                .orElseThrow(()->new PostNotFoundException("Not found post by id ="+idPost));;
+    public void deletePostById(UUID authorId, UUID postId) {
+        PostEntity entity =  postRepository.findById(postId)
+                .orElseThrow(()->new PostNotFoundException("Not found post by id ="+postId));
         if(!entity.getAuthorId().equals(authorId))
-            throw  new PostOwnerMismatchException("пользователь не имеет права на удаление"+idPost);
-        postRepository.delete(entity);
-        mediaService.deletePost(authorId,entity.getMedia());
+            throw  new PostOwnerMismatchException("пользователь не имеет права на удаление"+postId);
+        entity.makeDeleted();
+        commentRepository.deleteAllByPostId(postId);
+        likePostRepository.deleteAllByPostId(postId);
     }
     @Transactional
     public PostResponse patchCaptionById(UUID authorId, UUID postId,String caption) {
-            PostEntity entity= postRepository.findByIdAndAuthorId(authorId,postId);
+            PostEntity entity= postRepository.findByIdAndAuthorId(authorId,postId)
+                    .orElseThrow(()->new PostNotFoundException("Not found post by id ="+postId));
             entity.setCaption(caption);
             boolean likedByMe = authorId != null
                         && likePostRepository.existsByPostIdAndLikedAuthor(postId, authorId);
@@ -129,8 +130,8 @@ public class PostService {
     }
     @Transactional
     public CommentToResponse addComment(UUID id, UUID postId, String comments) {
-        PostEntity postEntity= postRepository.findById(postId)
-                .orElseThrow(()->new PostNotFoundException("Not found post by id ="+id));
+        if(postRepository.existsById(postId))
+            throw new PostNotFoundException("Not found post by id ="+id);
         CommentsEntity commentsEntity=new CommentsEntity(postId,id,comments);
         commentRepository.save(commentsEntity);
         postRepository.incrementCommentsCount(postId);
@@ -142,7 +143,7 @@ public class PostService {
         PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException("Not found post by id = " + postId));
 
-        int deleted = likePostRepository.deleteByPostIdAndLikedAuthor(postId, userId);
+        int deleted = likePostRepository.deleteLike(postId, userId);
 
         if (deleted == 0) {
             return new LikeResponse(post.getLikesCount(), false);
@@ -160,8 +161,10 @@ public class PostService {
             return;
         PostEntity entity=  postRepository.findById(request.postId())
                 .orElseThrow(()->new PostNotFoundException("Not found post by id ="+request.postId()));
+        if(request.postId().equals(entity.getId()))
+            throw new PostOwnerMismatchException("пользователь не имеет права на удаление"+request.postId());
         if(!entity.getAuthorId().equals(userId))
-            throw  new UserDoesntHavePermissionsException("Пользовательid ="+userId+ " не может удалить чужой пост"+request.postId());
+            throw  new UserDoesntHavePermissionsException("Пользователь id ="+userId+ " не может удалить чужой пост"+request.postId());
         CommentsEntity comments= commentRepository.findById(request.commentsId())
                 .orElseThrow(()->new PostNotFoundException("Not found comments by id ="+request.commentsId()));
         commentRepository.delete(comments);
@@ -169,6 +172,10 @@ public class PostService {
     }
 
     public Slice<CommentResponseUserWithProfile> getComments( UUID postId, Pageable page) {
+        PostEntity entity=  postRepository.findById(postId)
+                .orElseThrow(()->new PostNotFoundException("Not found post by id ="+postId));
+        if(entity.getDeletedAt() !=null)
+            throw new PostNotFoundException("Пост возможно был удалён");
         Slice<CommentsEntity>comments  =commentRepository.findByIdPost(postId,page);
         Set<UUID> authorIds = comments.stream().map(CommentsEntity::getUser).collect(Collectors.toSet());
         List<ShortUserDto> user = userClient.findByIds(authorIds);
@@ -177,8 +184,13 @@ public class PostService {
         return comments.map(c -> mapToCommentResponseUserWithProfile(
                 userWithComments.get(c.getUser()), c));
     }
+
     @Transactional
     public CommentToResponse updateComments(UUID userId, UpdateCommentsRequest request) {
+        PostEntity entity=  postRepository.findById(request.postId())
+                .orElseThrow(()->new PostNotFoundException("Not found post by id ="+request.postId()));
+        if(entity.getDeletedAt() !=null)
+            throw new PostNotFoundException("Пост возможно был удалён");
         CommentsEntity comments = commentRepository.findById(request.commentsId())
                 .orElseThrow(()->new CommentsNotFoundException("Not found comments by id ="+request.commentsId()));
         if(!comments.getUser().equals(userId))

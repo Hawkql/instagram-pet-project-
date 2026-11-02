@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Entity
 @Table(name = "posts")
 @Getter
+@SQLRestriction("deleted_at IS NULL")
 public class PostEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,6 +44,10 @@ public class PostEntity {
     @CreationTimestamp
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+
     public PostEntity(UUID authorId,
                       String caption,
                       String media
@@ -54,6 +60,10 @@ public class PostEntity {
         this.commentsCount = 0;
     }
 
+    public Instant makeDeleted(){
+        this.deletedAt =Instant.now();
+        return  deletedAt;
+    }
     protected PostEntity() {
     }
 }

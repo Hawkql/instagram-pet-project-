@@ -18,4 +18,8 @@ public interface CommentRepository extends JpaRepository<CommentsEntity, UUID> {
        WHERE c.idPost = :postId
        """)
     Slice<CommentsEntity> findByIdPost(@Param("postId") UUID postId, Pageable pageable);
+
+    @Modifying
+    @Query("delete from CommentsEntity c where c.idPost = :postId")
+    public void deleteAllByPostId(@Param("postId") UUID postId);
 }

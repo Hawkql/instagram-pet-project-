@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Repository;
 
 import java.util.Set;
@@ -27,5 +26,9 @@ public interface LikePostRepository extends JpaRepository<LikePostEntity, UUID> 
 
     @Modifying
     @Query("delete from LikePostEntity l where l.postId = :postId and l.likedAuthor = :userId")
-    int deleteByPostIdAndLikedAuthor(UUID postId, UUID userId);
+    int deleteLike(UUID postId, UUID userId);
+
+    @Modifying
+    @Query("delete from LikePostEntity l where l.postId = :postId")
+    public void deleteAllByPostId(@Param("postId") UUID postId);
 }
